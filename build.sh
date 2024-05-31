@@ -1,0 +1,1 @@
+gcc -z execstack -fno-stack-protector -m32 -no-pie -o vuln vuln.c
