@@ -116,6 +116,57 @@ Questo shellcode segue questi passaggi:
 6. Invoca `execve` per eseguire `/bin/sh`.
 7. Se `execve` fallisce, invoca `exit`.
 
+## Cenni Teorici
+Un buffer overflow si verifica quando più dati di quanti un buffer possa gestire vengono scritti in esso, sovrascrivendo
+la memoria adiacente. Questo pu`o portare a comportamenti imprevisti e potenzialmente sfruttabili.
+Quando un programma chiama una funzione, lo stack di chiamata viene utilizzato per memorizzare vari-
+abili locali, indirizzi di ritorno e altri dati. Durante un attacco di buffer overflow, un attaccante cerca di
+sovrascrivere l’indirizzo di ritorno per eseguire codice arbitrario. Vediamo come funziona questo attacco con
+una rappresentazione dello stack:
+
+Prima del Buffer Overflow:
++------------------+ <-- Top dello Stack
+| Indirizzo di     |
+| Ritorno          |
++------------------+
+| Vecchio          |
+| Base Pointer     |
++------------------+
+| Variabili Locali |
+| (Buffer)         |
++------------------+
+| ...              |
+
+Durante il Buffer Overflow:
++------------------+ <-- Top dello Stack
+| Indirizzo di     | <--- Sovrascritto;
+| Ritorno          |      Terza parte del payload
++------------------+
+| Vecchio          | <--- Sovrascritto
+| Base Pointer     |      Seconda parte del payload
++------------------+
+| Buffer           | <--- NOP e shellcode
+|                  |      Prima parte del payload
++------------------+
+| ...              |
+
+Dopo il Buffer Overflow:
++------------------+ <-- Top dello Stack
+| Indirizzo di     | <--- Punterà allo
+| Ritorno          |      shellcode
++------------------+
+| Vecchio          |
+| Base Pointer     |
++------------------+
+| Buffer           | <--- Shellcode
+|                  |
++------------------+
+| ...              |
+
+In questa rappresentazione, l’attaccante riempie il buffer con il proprio shellcode e sovrascrive l’indirizzo di
+ritorno con l’indirizzo del buffer stesso. Quando la funzione ritorna, esegue lo shellcode.
+
+
 ## Esecuzione del progetto
 Per eseguire il progetto, seguire i passaggi seguenti:
 
