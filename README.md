@@ -58,7 +58,7 @@ Il programma vuln.c definisce un buffer di 68 byte e copia il nostro shellcode a
 
 ## build.sh
 Il file `build.sh` è uno script di shell per compilare il programma vulnerabile. Utilizza gcc con specifiche opzioni per disabilitare le protezioni di sicurezza come il canary stack e l'ASLR (Address Space Layout Randomization).
-```sh
+```shell
 gcc -z execstack -fno-stack-protector -m32 -no-pie -o vuln vuln.c
 ```
 ### Opzioni di compilazione
@@ -123,7 +123,7 @@ Quando un programma chiama una funzione, lo stack di chiamata viene utilizzato p
 abili locali, indirizzi di ritorno e altri dati. Durante un attacco di buffer overflow, un attaccante cerca di
 sovrascrivere l’indirizzo di ritorno per eseguire codice arbitrario. Vediamo come funziona questo attacco con
 una rappresentazione dello stack:
-
+```
 Prima del Buffer Overflow:
 +------------------+ <-- Top dello Stack
 | Indirizzo di     |
@@ -162,7 +162,7 @@ Dopo il Buffer Overflow:
 |                  |
 +------------------+
 | ...              |
-
+```
 In questa rappresentazione, l’attaccante riempie il buffer con il proprio shellcode e sovrascrive l’indirizzo di
 ritorno con l’indirizzo del buffer stesso. Quando la funzione ritorna, esegue lo shellcode.
 
@@ -171,15 +171,15 @@ ritorno con l’indirizzo del buffer stesso. Quando la funzione ritorna, esegue 
 Per eseguire il progetto, seguire i passaggi seguenti:
 
 1. Assicurati di avere installato GCC con il supporto per la compilazione a 32 bit. Su un sistema Debian/Ubuntu, puoi installare i pacchetti necessari con:
-```sh
+```shell
 sudo apt-get install gcc-multilib g++-multilib
 ```
 2. Compila il programma eseguendo lo script build.sh:
-```sh
+```shell
 ./build.sh
 ```
 3. Esegui il programma compilato:
-```sh
+```shell
 ./vuln
 ```
 
