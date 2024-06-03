@@ -123,49 +123,68 @@ Quando un programma chiama una funzione, lo stack di chiamata viene utilizzato p
 abili locali, indirizzi di ritorno e altri dati. Durante un attacco di buffer overflow, un attaccante cerca di
 sovrascrivere l’indirizzo di ritorno per eseguire codice arbitrario. Vediamo come funziona questo attacco con
 una rappresentazione dello stack:
+### Prima dell'attacco
 ```
-Prima del Buffer Overflow:
-+------------------+ <-- Top dello Stack
-| Indirizzo di     |
-| Ritorno          |
-+------------------+
-| Vecchio          |
-| Base Pointer     |
-+------------------+
-| Variabili Locali |
-| (Buffer)         |
-+------------------+
-| ...              |
-
-Durante il Buffer Overflow:
-+------------------+ <-- Top dello Stack
-| Indirizzo di     | <--- Sovrascritto;
-| Ritorno          |      Terza parte del payload
-+------------------+
-| Vecchio          | <--- Sovrascritto
-| Base Pointer     |      Seconda parte del payload
-+------------------+
-| Buffer           | <--- NOP e shellcode
-|                  |      Prima parte del payload
-+------------------+
-| ...              |
-
-Dopo il Buffer Overflow:
-+------------------+ <-- Top dello Stack
-| Indirizzo di     | <--- Punterà allo
-| Ritorno          |      shellcode
-+------------------+
-| Vecchio          |
-| Base Pointer     |
-+------------------+
-| Buffer           | <--- Shellcode
-|                  |
-+------------------+
-| ...              |
+Indirizzi di memoria (alto -> basso):
+0xffffcf30:   [ Indirizzo di ritorno originale ]
+0xffffcf2c:   [ Frame Pointer (EBP) del chiamante ]
+0xffffcf28:   [ Variabili locali e spazio temporaneo ]
+0xffffcf24:   ...
+0xffffcf20:   ...
+0xffffcf1c:   ...
+0xffffcf18:   ...
+0xffffcf14:   ...
+0xffffcf10:   ...
+0xffffcf0c:   ...
+0xffffcf08:   ...
+0xffffcf04:   ...
+0xffffcf00:   ...
 ```
-In questa rappresentazione, l’attaccante riempie il buffer con il proprio shellcode e sovrascrive l’indirizzo di
-ritorno con l’indirizzo del buffer stesso. Quando la funzione ritorna, esegue lo shellcode.
-
+### Dopo l'attacco
+```
+Indirizzi di memoria (alto -> basso):
+0xffffcf30:   0xffffcf20        <- Indirizzo di ritorno sovrascritto
+0xffffcf2c:   [ Frame Pointer (EBP) del chiamante ]
+0xffffcf28:   0x90              <- NOP sled
+0xffffcf24:   0x90              <- NOP sled
+0xffffcf20:   0x90              <- NOP sled
+0xffffcf1c:   ...
+0xffffcf18:   ...
+0xffffcf14:   ...
+0xffffcf10:   [ shellcode ]
+0xffffcf0c:   [ shellcode ]
+0xffffcf08:   [ shellcode ]
+0xffffcf04:   [ shellcode ]
+0xffffcf00:   ...
+```
+### Dettaglio del buffer
+Il buffer di 68 byte conterrà:
+- I primi 64 byte sono NOP (\x90) e il codice shell.
+- Gli ultimi 4 byte sono l'indirizzo di ritorno sovrascritto (0xffffcf20).
+Più in dettaglio, la memoria sarà riempita come segue:
+```
+Indirizzi di memoria (alto -> basso):
+0xffffcf44:   [ Dati aggiuntivi / Non utilizzati ]
+0xffffcf40:   0xffffcf20        <- Indirizzo di ritorno sovrascritto
+0xffffcf3c:   0x90              <- NOP sled
+0xffffcf38:   0x90              <- NOP sled
+0xffffcf34:   0x90              <- NOP sled
+0xffffcf30:   0x90              <- NOP sled
+0xffffcf2c:   0x90              <- NOP sled
+0xffffcf28:   0x90              <- NOP sled
+0xffffcf24:   0x90              <- NOP sled
+0xffffcf20:   0x90              <- NOP sled
+0xffffcf1c:   0x31              <- shellcode (start)
+0xffffcf18:   0xc0              <- shellcode
+0xffffcf14:   0x31              <- shellcode
+0xffffcf10:   0xdb              <- shellcode
+0xffffcf0c:   0xb0              <- shellcode
+0xffffcf08:   0x17              <- shellcode
+0xffffcf04:   0xcd              <- shellcode
+0xffffcf00:   0x80              <- shellcode
+...
+```
+Quando il programma sovrascrive l'indirizzo di ritorno, esso punta all'inizio del buffer, il quale contiene NOP sled seguito dal codice shell. Questo permette al programma di eseguire il codice shell iniettato, sfruttando il buffer overflow per eseguire l'attacco.
 
 ## Esecuzione del progetto
 Per eseguire il progetto, seguire i passaggi seguenti:
